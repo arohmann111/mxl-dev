@@ -2,16 +2,47 @@
 #include <mxl/flow.h>
 #include <mxl/time.h>
 #include <cstring>
+#include <cstdio>
 
 #define SUCCESS 0
 #define ERROR 1
 
-int main()
+
+int print_status(int status, const char *message) {
+  if (status == SUCCESS) {
+    system("Color 0A");
+    std::fprintf(stdout, message);
+    system("Color 0F");
+  }
+  else {
+    system("Color 0C");
+    std::fprintf(stderr, message);
+    system("Color 0F");
+  }
+  return status;
+}
+
+int main( int argc, char *argv[])
 {
-    mxlInstance instance = mxlCreateInstance("/dev/shm/mxl", "");
+  const char *mxlDomain = "/dev/shm/mxl";
+
+  int i = 1;
+  while (argv[i]) {
+    if (std::strcmp(argv[i], "--mxl-domain") == 0) {
+      if (i + 1 >= argc) {
+        return print_status(ERROR, "ERROR: mxl-domain missing !");
+      }
+      mxlDomain = argv[++i];
+    }
+    else {
+      return print_status(ERROR, "ERROR: please add --mxl-domain PATH ");
+    }
+  }
+
+  mxlInstance instance = mxlCreateInstance(mxlDomain, "");
     if (!instance)
     {
-        return ERROR;
+        return print_status(ERROR, "ERROR: Instance missing");
     }
     mxlFlowWriter writer{};
     mxlFlowConfigInfo config{};
@@ -67,7 +98,7 @@ int main()
     if (status != MXL_STATUS_OK)
     {
         mxlDestroyInstance(instance);
-        return ERROR;
+        return print_status(ERROR, "ERROR: MXL Flow couldn't be created");
     }
 
     const mxlRational frameRate{30000, 1001};
@@ -83,7 +114,7 @@ int main()
     if (openStatus != MXL_STATUS_OK) {
         mxlReleaseFlowWriter(instance, writer);
         mxlDestroyInstance(instance);
-        return ERROR;
+        return print_status(ERROR, "ERROR: MXL grain couldn't be opened");
     }
 
     std::memset(payload, 0, grain.grainSize);
@@ -94,10 +125,10 @@ int main()
     if (commitStatus != MXL_STATUS_OK) {
         mxlReleaseFlowWriter(instance, writer);
         mxlDestroyInstance(instance);
-        return ERROR;
+        return print_status(ERROR, "ERROR: MXL grain couldn't be commited");
     }
 
     mxlReleaseFlowWriter(instance, writer);
     mxlDestroyInstance(instance);
-    return SUCCESS;
+    return print_status(SUCCESS, "SUCCESS: grain was written to domain");
 }

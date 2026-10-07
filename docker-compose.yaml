@@ -1,0 +1,13 @@
+services:
+  mxl-flow-1:
+    image: s0004823.swr.ard/moip/gst-mxl-test:v1.1_61
+    container_name: mxl-flow-1
+    volumes:
+      - type: bind
+        source: /dev/shm/mxl
+        target: /dev/shm/mxl
+    command:
+      - /home/mxl/2110media-function
+      - --mxl-domain
+      - /dev/shm/mxl
+    restart: "no"
